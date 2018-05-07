@@ -2,12 +2,27 @@ package compare
 
 import (
 	"testing"
+	"time"
+
+	"math/rand"
 
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	rand.Seed(time.Now().Unix())
+}
+
 type IntStruct struct {
 	Integer int
+	rnd     int32
+}
+
+func NewIntStruct(i int) IntStruct {
+	return IntStruct{
+		Integer: i,
+		rnd:     rand.Int31(),
+	}
 }
 
 func (i IntStruct) Equal(v interface{}) bool {
@@ -42,6 +57,14 @@ func (i IntStruct) Compare(v interface{}) int {
 
 type StringStruct struct {
 	String string
+	rnd    int32
+}
+
+func NewStringStruct(s string) StringStruct {
+	return StringStruct{
+		String: s,
+		rnd:    rand.Int31(),
+	}
 }
 
 func (i StringStruct) Equal(v interface{}) bool {
@@ -56,12 +79,12 @@ func (i StringStruct) Equal(v interface{}) bool {
 
 func TestEqual(t *testing.T) {
 	s := struct{}{}
-	x := IntStruct{1}
-	y := IntStruct{2}
-	z := StringStruct{"Hello"}
+	x := NewIntStruct(1)
+	y := NewIntStruct(2)
+	z := NewStringStruct("Hello")
 
 	require.Equal(t, true, Equal(x, x))
-	require.Equal(t, true, Equal(x, &x))
+	require.Equal(t, false, Equal(x, &x))
 	require.Equal(t, true, Equal(&x, &x))
 
 	require.Equal(t, false, Equal(x, y))
@@ -81,39 +104,38 @@ func TestEqual(t *testing.T) {
 	require.Equal(t, false, Equal(&s, &x))
 }
 
-func TestCompare(t *testing.T) {
-	s := struct{}{}
-	v := IntStruct{1}
-	x := IntStruct{2}
-	y := IntStruct{3}
-	z := StringStruct{"Hello"}
+func TestEqualSlice(t *testing.T) {
+	x := []interface{}{
+		NewIntStruct(1),
+		NewIntStruct(2),
+	}
+	y := []interface{}{
+		NewIntStruct(2),
+		NewIntStruct(2),
+	}
+	z := []interface{}{
+		NewIntStruct(1),
+		NewStringStruct("Hello"),
+	}
+	require.Equal(t, true, Equal(x, x))
+	require.Equal(t, false, Equal(x, y))
+	require.Equal(t, false, Equal(x, z))
+}
 
-	require.Equal(t, 0, Compare(v, v))
-	require.Equal(t, 0, Compare(v, &v))
-	require.Equal(t, 0, Compare(&v, &v))
-
-	require.Equal(t, 1, Compare(x, v))
-	require.Equal(t, 1, Compare(x, &v))
-	require.Equal(t, 1, Compare(&x, &v))
-
-	require.Equal(t, -1, Compare(x, y))
-	require.Equal(t, -1, Compare(x, &y))
-	require.Equal(t, -1, Compare(&x, &y))
-
-	require.Equal(t, 1, Compare(v, s))
-	require.Equal(t, 1, Compare(v, &s))
-	require.Equal(t, 1, Compare(&v, &s))
-
-	require.Equal(t, 1, Compare(s, v))
-	require.Equal(t, 1, Compare(s, &v))
-	require.Equal(t, 1, Compare(&s, &v))
-
-	require.Equal(t, 1, Compare(v, z))
-	require.Equal(t, 1, Compare(v, &z))
-	require.Equal(t, 1, Compare(&v, &z))
-
-	s1 := struct{ A int }{7}
-	s2 := struct{ A int }{7}
-
-	require.Equal(t, 0, Compare(s1, s2))
+func TestEqualMap(t *testing.T) {
+	x := map[string]interface{}{
+		"A": NewIntStruct(1),
+		"B": NewIntStruct(2),
+	}
+	y := map[string]interface{}{
+		"A": NewIntStruct(2),
+		"B": NewIntStruct(2),
+	}
+	z := map[string]interface{}{
+		"A": NewIntStruct(1),
+		"B": NewStringStruct("Hello"),
+	}
+	require.Equal(t, true, Equal(x, x))
+	require.Equal(t, false, Equal(x, y))
+	require.Equal(t, false, Equal(x, z))
 }
