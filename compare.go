@@ -3,6 +3,8 @@ package compare
 import (
 	"reflect"
 	"unsafe"
+
+	forceexport "github.com/alangpierce/go-forceexport"
 )
 
 type Equaler interface {
@@ -19,6 +21,15 @@ func Equal(x, y interface{}) bool {
 		return false
 	}
 	return deepValueEqual(v1, v2, make(map[visit]bool), 0)
+}
+
+var reflectValueInterface func(v reflect.Value, safe bool) interface{}
+
+func init() {
+	err := forceexport.GetFunc(&reflectValueInterface, "reflect.valueInterface")
+	if err != nil {
+		panic(err)
+	}
 }
 
 // During deepValueEqual, must keep track of checks that are
@@ -75,9 +86,13 @@ func deepValueEqual(v1, v2 reflect.Value, visited map[visit]bool, depth int) boo
 		visited[v] = true
 	}
 
-	if v1.CanInterface() && v2.CanInterface() {
-		if eq, ok := v1.Interface().(Equaler); ok {
-			return eq.Equal(v2.Interface())
+	if i1 := reflectValueInterface(v1, false); i1 != nil {
+		if i2 := reflectValueInterface(v2, false); i2 != nil {
+			if eq, ok := i1.(Equaler); ok {
+				return eq.Equal(i2)
+			} else if eq, ok := i2.(Equaler); ok {
+				return eq.Equal(i1)
+			}
 		}
 	}
 
@@ -148,6 +163,6 @@ func deepValueEqual(v1, v2 reflect.Value, visited map[visit]bool, depth int) boo
 		return false
 	default:
 		// Normal equality suffices
-		return v1.Interface() == v2.Interface()
+		return reflectValueInterface(v1, false) == reflectValueInterface(v2, false)
 	}
 }

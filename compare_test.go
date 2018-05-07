@@ -35,26 +35,6 @@ func (i IntStruct) Equal(v interface{}) bool {
 	return false
 }
 
-func (i IntStruct) Compare(v interface{}) int {
-	switch x := v.(type) {
-	case IntStruct:
-		if i.Integer == x.Integer {
-			return 0
-		} else if i.Integer > x.Integer {
-			return 1
-		}
-		return -1
-	case *IntStruct:
-		if i.Integer == x.Integer {
-			return 0
-		} else if i.Integer > x.Integer {
-			return 1
-		}
-		return -1
-	}
-	return 1
-}
-
 type StringStruct struct {
 	String string
 	rnd    int32
@@ -138,4 +118,16 @@ func TestEqualMap(t *testing.T) {
 	require.Equal(t, true, Equal(x, x))
 	require.Equal(t, false, Equal(x, y))
 	require.Equal(t, false, Equal(x, z))
+}
+
+func TestEqualPrivate(t *testing.T) {
+	type St1 struct {
+		str string
+	}
+	require.Equal(t, true, Equal(St1{"Hello"}, St1{"Hello"}))
+
+	type St2 struct {
+		i IntStruct
+	}
+	require.Equal(t, true, Equal(St2{NewIntStruct(2)}, St2{NewIntStruct(2)}))
 }
