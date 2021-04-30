@@ -3,8 +3,6 @@ package compare
 import (
 	"reflect"
 	"unsafe"
-
-	forceexport "github.com/alangpierce/go-forceexport"
 )
 
 type Equaler interface {
@@ -23,14 +21,8 @@ func Equal(x, y interface{}) bool {
 	return deepValueEqual(v1, v2, make(map[visit]bool), 0)
 }
 
-var reflectValueInterface func(v reflect.Value, safe bool) interface{}
-
-func init() {
-	err := forceexport.GetFunc(&reflectValueInterface, "reflect.valueInterface")
-	if err != nil {
-		panic(err)
-	}
-}
+//go:linkname reflectValueInterface reflect.valueInterface
+func reflectValueInterface(v reflect.Value, safe bool) interface{}
 
 // During deepValueEqual, must keep track of checks that are
 // in progress. The comparison algorithm assumes that all
